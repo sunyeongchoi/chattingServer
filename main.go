@@ -8,31 +8,13 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize: 1024,
+	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-}
-
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Home Page")
-}
-
-func wsEndpoint(w http.ResponseWriter, r *http.Request) {
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true}
-
-	// upgrade this connection to a WebSocket
-	// connection
-	ws, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-	}
-	// helpful log statement to show connections
-	log.Println("Client Connected")
-	err = ws.WriteMessage(1, []byte("Hi Client!"))
-	if err != nil {
-		log.Println(err)
-	}
-
-	reader(ws)
+	// We'll need to check the origin of our connection
+	// this will allow us to make requests from our React
+	// development server to here.
+	// For now, we'll do no checking and just allow any connection
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
 // define a reader which will listen for
@@ -56,8 +38,27 @@ func reader(conn *websocket.Conn) {
 	}
 }
 
+func wsEndpoint(w http.ResponseWriter, r *http.Request) {
+	// upgrade this connection to a WebSocket
+	// connection
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+	}
+	// helpful log statement to show connections
+	//log.Println("Client Connected")
+	//err = ws.WriteMessage(1, []byte("Hi Client!"))
+	//if err != nil {
+	//	log.Println(err)
+	//}
+
+	reader(ws)
+}
+
 func setupRoutes() {
-	http.HandleFunc("/", homePage)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Home Page")
+	})
 	http.HandleFunc("/ws", wsEndpoint)
 }
 
@@ -66,4 +67,3 @@ func main() {
 	setupRoutes()
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
